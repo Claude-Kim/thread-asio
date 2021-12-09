@@ -3,44 +3,56 @@
 #include <mutex>
 #include <thread>
 
-class X
+class Conn
 {
-private:
-    std::string msg;
-    std::mutex m;
 public:
-    X() = default;
-    void do_something(std::string _msg) {
+    Conn() {
+        std::cout << "Conn ctor" << std::endl;
+    }
+    void do_something(std::string& _msg) 
+    {
         std::scoped_lock guard(m);
-        msg = _msg;
-    };
+        // process with connection 
+        std::cout << _msg << std::endl;
+
+    }
+private:
+    std::mutex m;  
+    std::shared_ptr<std::string> connection;
 };
 
-std::shared_ptr<X> resource_ptr;
-std::once_flag resource_flag;
-
-void init_resource()
+class X
 {
-    resource_ptr.reset(new X);
-}
-
-void func(std::string& msg)
-{
-    std::call_once(resource_flag, init_resource);
-
-    resource_ptr->do_something(msg);
-}
+private: 
+    std::once_flag resource_flag;
+    std::shared_ptr<Conn> resource_ptr;
+public:
+    X() {
+        std::cout << "X ctor" << std::endl;
+    }
+    void init_resource()
+    {
+        resource_ptr.reset(new Conn);
+    }
+    void func(std::string& msg)
+    {
+        std::call_once(resource_flag, &X::init_resource, this);
+        resource_ptr->do_something(msg);
+    }   
+};
 
 int main()
 {
+    X x;
     std::string msg = "Hello";
-
-    std::thread t1(func, std::ref(msg));
-    std::thread t2(func, std::ref(msg));
-    std::thread t3(func, std::ref(msg));
+    
+    std::thread t1(&X::func, &x, std::ref(msg));
+    std::thread t2(&X::func, &x, std::ref(msg));
+    std::thread t3(&X::func, &x, std::ref(msg));
 
     t1.join();
     t2.join();
     t3.join();
+
 }
 
