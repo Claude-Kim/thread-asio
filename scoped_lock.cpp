@@ -25,6 +25,18 @@ void swap(X& lhs, X& rhs)
     if(&lhs==&rhs)
         return;
     std::scoped_lock guard(lhs.m, rhs.m);
+
+/*  
+    std::unique_lock<std::mutex> lock_a(lhs.m, std::defer_lock);
+    std::unique_lock<std::mutex> lock_b(rhs.m, std::defer_lock);
+    std::lock (lock_a, lock_b);
+*/
+
+/*
+    std::lock(lhs.m, rhs.m);
+    std::lock_guard<std::mutex> lock_a(lhs.m, std::adopt_lock);
+    std::lock_guard<std::mutex> lock_b(rhs.m, std::adopt_lock);
+*/
     std::swap(lhs.data, rhs.data);
 }
 
